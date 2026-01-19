@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ting Global Translator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+<header class="bg-gray-800 p-4 flex justify-between">
+  <h1 class="font-bold text-blue-400">🌍 Ting Global Translator</h1>
+  <span class="text-sm text-gray-400">Business AI</span>
+</header>
+
+<main class="flex-1 flex flex-col items-center justify-center p-6">
+
+  <h2 class="text-2xl font-semibold mb-4 text-center">
+    🎤 English → 🈶 Chinese Voice Translator
+  </h2>
+
+  <button id="speakBtn"
+    class="bg-blue-500 px-6 py-3 rounded-full mb-3"
+    onclick="startListening()">
+    🎤 Start Speaking
+  </button>
+
+  <p id="status" class="text-yellow-400 text-sm mb-4"></p>
+
+  <div class="w-full max-w-xl space-y-4">
+
+    <div>
+      <label class="text-sm text-gray-400">English</label>
+      <div id="englishText" class="bg-gray-800 p-3 rounded min-h-[60px]"></div>
+    </div>
+
+    <div>
+      <label class="text-sm text-gray-400">Chinese</label>
+      <div id="chineseText" class="bg-gray-800 p-3 rounded min-h-[60px]"></div>
+    </div>
+
+    <button onclick="speakChinese()"
+      class="bg-green-500 px-4 py-2 rounded w-full">
+      🔊 Play Chinese Voice
+    </button>
+
+  </div>
+</main>
+
+<footer class="bg-gray-800 p-4 text-center text-sm text-gray-400">
+  © 2026 Ting Global Translator
+</footer>
+
+<script>
+/* ===== Speech Recognition ===== */
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.lang = "en-US";
+
+const speakBtn = document.getElementById("speakBtn");
+const statusText = document.getElementById("status");
+
+function startListening() {
+  speakBtn.disabled = true;
+  speakBtn.innerText = "🎙 Listening...";
+  statusText.innerText = "Listening...";
+  recognition.start();
+}
+
+recognition.onend = () => {
+  speakBtn.disabled = false;
+  speakBtn.innerText = "🎤 Start Speaking";
+};
+
+recognition.onresult = async (event) => {
+  const english = event.results[0][0].transcript;
+  document.getElementById("englishText").innerText = english;
+  statusText.innerText = "Translating...";
+
+  try {
+    const res = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: english })
+    });
+
+    const data = await res.json();
+    document.getElementById("chineseText").innerText = data.chinese;
+    statusText.innerText = "Done ✅";
+
+  } catch (e) {
+    statusText.innerText = "Translation failed ❌";
+  }
+};
+
+/* ===== Text To Speech ===== */
+function speakChinese() {
+  const text = document.getElementById("chineseText").innerText;
+  if (!text) return;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "zh-CN";
+  speechSynthesis.speak(utterance);
+}
+</script>
+
+</body>
+</html>
